@@ -18,9 +18,17 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
+      console.log('Auth slice: registering user with data:', JSON.stringify({
+        email: userData.email,
+        name: userData.name,
+        surname: userData.surname,
+        // Don't log password for security reasons
+      }));
+      
       const newUser = await authService.register(userData);
       return newUser;
     } catch (error) {
+      console.error('Auth slice: registration error:', error);
       return rejectWithValue(error.message);
     }
   }

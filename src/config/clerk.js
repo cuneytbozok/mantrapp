@@ -1,0 +1,2 @@
+// Clerk configuration
+export const CLERK_PUBLISHABLE_KEY = "pk_test_aW4tZnJvZy0yMy5jbGVyay5hY2NvdW50cy5kZXYk"; 

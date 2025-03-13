@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Dimensions } from 'react-native';
 import { TextInput, Text, Title, useTheme } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSignIn } from '@clerk/clerk-expo';
 
 import { loginUser, clearError } from '../../redux/slices/authSlice';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, gradients } from '../../constants/theme';
 import Button from '../../components/Button';
+
+// Get screen dimensions
+const { height } = Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -19,6 +23,7 @@ const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const theme = useTheme();
   const { loading, error } = useSelector((state) => state.auth);
+  const { isLoaded: isSignInLoaded, signIn } = useSignIn();
 
   // Clear any auth errors when component mounts or unmounts
   useEffect(() => {
@@ -57,16 +62,47 @@ const LoginScreen = ({ navigation }) => {
     return isValid;
   };
 
-  const handleLogin = () => {
-    if (validateForm()) {
-      dispatch(loginUser({ email, password }));
+  const handleLogin = async () => {
+    if (!isSignInLoaded) {
+      setErrors({ auth: 'Authentication system is not ready yet. Please try again.' });
+      return;
     }
-  };
-
-  // For demo purposes, prefill with test account
-  const fillTestAccount = () => {
-    setEmail('john@example.com');
-    setPassword('password123');
+    
+    if (validateForm()) {
+      // Clear any previous errors
+      setErrors({});
+      
+      try {
+        // Use Clerk's signIn hook directly
+        const result = await signIn.create({
+          identifier: email,
+          password,
+        });
+        
+        console.log('Clerk signin result:', result.status);
+        
+        if (result.status === 'complete') {
+          // Set the active session
+          await signIn.setActive({ session: result.createdSessionId });
+          
+          // Now update Redux state
+          dispatch(loginUser({ email, password }))
+            .unwrap()
+            .then(user => {
+              console.log('Login successful:', user.id);
+            })
+            .catch(error => {
+              console.error('Login failed:', error);
+              setErrors({ auth: error || 'Login failed. Please try again.' });
+            });
+        } else {
+          setErrors({ auth: 'Sign in is not complete. Please try again.' });
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        setErrors({ auth: err.message || 'Login failed. Please try again.' });
+      }
+    }
   };
 
   return (
@@ -80,10 +116,14 @@ const LoginScreen = ({ navigation }) => {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <ScrollView contentContainerStyle={styles.scrollView}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.logoContainer}>
-              <MaterialCommunityIcons name="meditation" size={80} color={COLORS.sereneBlue} />
+              <MaterialCommunityIcons name="meditation" size={60} color={COLORS.sereneBlue} />
               <Title style={styles.appTitle}>Mantra App</Title>
               <Text style={styles.tagline}>Empower your mind, one mantra at a time</Text>
             </View>
@@ -105,6 +145,7 @@ const LoginScreen = ({ navigation }) => {
                 autoCapitalize="none"
                 error={!!errors.email}
                 theme={{ colors: { primary: COLORS.sereneBlue } }}
+                dense
               />
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
@@ -124,6 +165,7 @@ const LoginScreen = ({ navigation }) => {
                 }
                 error={!!errors.password}
                 theme={{ colors: { primary: COLORS.sereneBlue } }}
+                dense
               />
               {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
@@ -137,10 +179,6 @@ const LoginScreen = ({ navigation }) => {
               >
                 Login
               </Button>
-
-              <TouchableOpacity onPress={fillTestAccount} style={styles.testAccountButton}>
-                <Text style={styles.testAccountText}>Use Test Account</Text>
-              </TouchableOpacity>
 
               <View style={styles.signupContainer}>
                 <Text style={styles.signupText}>Don't have an account?</Text>
@@ -169,20 +207,21 @@ const styles = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: SPACING.xxl,
+    marginBottom: SPACING.md,
   },
   appTitle: {
-    fontSize: TYPOGRAPHY.fontSizes.xxxl,
+    fontSize: TYPOGRAPHY.fontSizes.xxl,
     fontWeight: TYPOGRAPHY.fontWeights.bold,
     color: COLORS.warmGray,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   tagline: {
-    fontSize: TYPOGRAPHY.fontSizes.md,
+    fontSize: TYPOGRAPHY.fontSizes.sm,
     color: COLORS.mutedLilac,
     textAlign: 'center',
   },
@@ -190,40 +229,34 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: COLORS.softWhite,
     borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     ...SHADOWS.medium,
   },
   errorContainer: {
     backgroundColor: 'rgba(255, 0, 0, 0.1)',
     padding: SPACING.sm,
     borderRadius: BORDER_RADIUS.sm,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   input: {
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
     backgroundColor: COLORS.softWhite,
+    height: 50,
   },
   button: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
+    height: 45,
   },
   errorText: {
     color: COLORS.error,
-    fontSize: TYPOGRAPHY.fontSizes.xs,
-    marginBottom: SPACING.sm,
+    fontSize: TYPOGRAPHY.fontSizes.xxs,
+    marginBottom: SPACING.xs,
     marginLeft: SPACING.xs,
-  },
-  testAccountButton: {
-    alignItems: 'center',
-    marginTop: SPACING.md,
-  },
-  testAccountText: {
-    color: COLORS.sereneBlue,
-    textDecorationLine: 'underline',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
   },
   signupText: {
     color: COLORS.warmGray,

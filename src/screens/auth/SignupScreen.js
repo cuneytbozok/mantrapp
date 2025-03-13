@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Dimensions } from 'react-native';
 import { TextInput, Text, Title, useTheme } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSignUp, useUser } from '@clerk/clerk-expo';
 
 import { registerUser, clearError } from '../../redux/slices/authSlice';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, gradients } from '../../constants/theme';
 import Button from '../../components/Button';
+
+// Get screen dimensions
+const { height } = Dimensions.get('window');
 
 const SignupScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -16,13 +20,18 @@ const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showVerification, setShowVerification] = useState(false);
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [confirmSecureTextEntry, setConfirmSecureTextEntry] = useState(true);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   
   const dispatch = useDispatch();
   const theme = useTheme();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading: authLoading, error } = useSelector((state) => state.auth);
+  const { isLoaded: isSignUpLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
+  const { user, isLoaded: isUserLoaded } = useUser();
 
   // Clear any auth errors when component mounts or unmounts
   useEffect(() => {
@@ -41,13 +50,13 @@ const SignupScreen = ({ navigation }) => {
     let formErrors = {};
     let isValid = true;
 
-    if (!name.trim()) {
-      formErrors.name = 'Name is required';
+    if (!name) {
+      formErrors.name = 'First name is required';
       isValid = false;
     }
 
-    if (!surname.trim()) {
-      formErrors.surname = 'Surname is required';
+    if (!surname) {
+      formErrors.surname = 'Last name is required';
       isValid = false;
     }
 
@@ -62,8 +71,8 @@ const SignupScreen = ({ navigation }) => {
     if (!password) {
       formErrors.password = 'Password is required';
       isValid = false;
-    } else if (password.length < 6) {
-      formErrors.password = 'Password must be at least 6 characters';
+    } else if (password.length < 8) {
+      formErrors.password = 'Password must be at least 8 characters';
       isValid = false;
     }
 
@@ -79,12 +88,132 @@ const SignupScreen = ({ navigation }) => {
     return isValid;
   };
 
-  const handleSignup = () => {
-    if (validateForm()) {
-      // Navigate to category selection screen
-      navigation.navigate('CategorySelection', {
-        userData: { name, surname, email, password }
+  // Update user profile with first and last name
+  const updateUserProfile = async (userId) => {
+    try {
+      if (isUserLoaded && user) {
+        await user.update({
+          firstName: name,
+          lastName: surname,
+        });
+        console.log('User profile updated with name and surname');
+      }
+    } catch (err) {
+      console.error('Error updating user profile:', err);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!verificationCode) {
+      setErrors({ verification: 'Please enter the verification code' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await signUp.attemptEmailAddressVerification({
+        code: verificationCode,
       });
+
+      console.log('Verification result:', result.status);
+
+      if (result.status === 'complete') {
+        // Set the active session
+        await setActiveSignUp({ session: result.createdSessionId });
+        
+        // Update user profile with first and last name
+        await updateUserProfile(result.createdUserId);
+        
+        // Now update Redux state
+        const userData = {
+          id: result.createdUserId,
+          email,
+          name,
+          surname,
+        };
+        
+        dispatch(registerUser(userData));
+        
+        // Show success message and navigate to login
+        alert('Account created successfully! You can now log in.');
+        navigation.navigate('Login');
+      } else {
+        setErrors({ verification: `Verification failed. Status: ${result.status}` });
+      }
+    } catch (err) {
+      console.error('Verification error:', err);
+      setErrors({ verification: err.message || 'Verification failed. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    if (!isSignUpLoaded) {
+      setErrors({ auth: 'Authentication system is not ready yet. Please try again.' });
+      return;
+    }
+    
+    if (validateForm()) {
+      // Clear any previous errors
+      setErrors({});
+      setLoading(true);
+      
+      try {
+        // Use Clerk's signUp hook directly with only the required parameters
+        const result = await signUp.create({
+          emailAddress: email,
+          password,
+        });
+        
+        console.log('Clerk signup result:', result.status);
+        
+        if (result.status === 'complete') {
+          // Set the active session
+          await setActiveSignUp({ session: result.createdSessionId });
+          
+          // Update user profile with first and last name
+          await updateUserProfile(result.createdUserId);
+          
+          // Now update Redux state
+          const userData = {
+            id: result.createdUserId,
+            email,
+            name,
+            surname,
+          };
+          
+          dispatch(registerUser(userData));
+        } else if (result.status === 'missing_requirements') {
+          // Handle the case where email verification is required
+          if (result.verifications?.emailAddress?.status === 'unverified') {
+            setErrors({ 
+              auth: 'Please check your email and click the verification link to complete signup. You can close this screen after verifying.' 
+            });
+          } else {
+            // Check if we need to prepare verification (send verification email)
+            const verificationResult = await signUp.prepareVerification({
+              strategy: 'email_code',
+            });
+            
+            if (verificationResult) {
+              setShowVerification(true);
+              setErrors({ 
+                auth: 'A verification code has been sent to your email. Please enter it below to complete signup.' 
+              });
+            } else {
+              setErrors({ auth: 'Sign up requires additional verification. Please check your email.' });
+            }
+          }
+        } else {
+          setErrors({ auth: `Sign up status: ${result.status}. Additional steps may be required.` });
+        }
+      } catch (err) {
+        console.error('Signup error:', err);
+        setErrors({ auth: err.message || 'Registration failed. Please try again.' });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -99,12 +228,16 @@ const SignupScreen = ({ navigation }) => {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <ScrollView contentContainerStyle={styles.scrollView}>
-            <View style={styles.headerContainer}>
-              <MaterialCommunityIcons name="account-plus" size={40} color={COLORS.sereneBlue} />
-              <Title style={styles.title}>Create Account</Title>
-              <Text style={styles.subtitle}>Join Mantra App for daily motivation</Text>
+          <ScrollView 
+            contentContainerStyle={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.logoContainer}>
+              <MaterialCommunityIcons name="meditation" size={50} color={COLORS.sereneBlue} />
+              <Title style={styles.appTitle}>Create Account</Title>
+              <Text style={styles.tagline}>Join our community of mindfulness</Text>
             </View>
 
             <View style={styles.formContainer}>
@@ -114,89 +247,142 @@ const SignupScreen = ({ navigation }) => {
                 </View>
               )}
 
-              <TextInput
-                label="Name"
-                value={name}
-                onChangeText={setName}
-                mode="outlined"
-                style={styles.input}
-                error={!!errors.name}
-                theme={{ colors: { primary: COLORS.sereneBlue } }}
-              />
-              {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+              {!showVerification ? (
+                <>
+                  <View style={styles.nameRow}>
+                    <TextInput
+                      label="First Name"
+                      value={name}
+                      onChangeText={setName}
+                      mode="outlined"
+                      style={[styles.input, styles.nameInput, { marginRight: SPACING.sm }]}
+                      error={!!errors.name}
+                      theme={{ colors: { primary: COLORS.sereneBlue } }}
+                      dense
+                    />
+                    
+                    <TextInput
+                      label="Last Name"
+                      value={surname}
+                      onChangeText={setSurname}
+                      mode="outlined"
+                      style={[styles.input, styles.nameInput]}
+                      error={!!errors.surname}
+                      theme={{ colors: { primary: COLORS.sereneBlue } }}
+                      dense
+                    />
+                  </View>
+                  
+                  <View style={styles.errorRow}>
+                    <Text style={[styles.errorText, styles.nameError]}>{errors.name || ' '}</Text>
+                    <Text style={[styles.errorText, styles.nameError]}>{errors.surname || ' '}</Text>
+                  </View>
 
-              <TextInput
-                label="Surname"
-                value={surname}
-                onChangeText={setSurname}
-                mode="outlined"
-                style={styles.input}
-                error={!!errors.surname}
-                theme={{ colors: { primary: COLORS.sereneBlue } }}
-              />
-              {errors.surname && <Text style={styles.errorText}>{errors.surname}</Text>}
-
-              <TextInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                mode="outlined"
-                style={styles.input}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={!!errors.email}
-                theme={{ colors: { primary: COLORS.sereneBlue } }}
-              />
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-
-              <TextInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                mode="outlined"
-                style={styles.input}
-                secureTextEntry={secureTextEntry}
-                right={
-                  <TextInput.Icon
-                    icon={secureTextEntry ? 'eye-off' : 'eye'}
-                    onPress={() => setSecureTextEntry(!secureTextEntry)}
-                    color={COLORS.warmGray}
+                  <TextInput
+                    label="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    mode="outlined"
+                    style={styles.input}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={!!errors.email}
+                    theme={{ colors: { primary: COLORS.sereneBlue } }}
+                    dense
                   />
-                }
-                error={!!errors.password}
-                theme={{ colors: { primary: COLORS.sereneBlue } }}
-              />
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                  {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-              <TextInput
-                label="Confirm Password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                mode="outlined"
-                style={styles.input}
-                secureTextEntry={confirmSecureTextEntry}
-                right={
-                  <TextInput.Icon
-                    icon={confirmSecureTextEntry ? 'eye-off' : 'eye'}
-                    onPress={() => setConfirmSecureTextEntry(!confirmSecureTextEntry)}
-                    color={COLORS.warmGray}
+                  <TextInput
+                    label="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    mode="outlined"
+                    style={styles.input}
+                    secureTextEntry={secureTextEntry}
+                    right={
+                      <TextInput.Icon
+                        icon={secureTextEntry ? 'eye-off' : 'eye'}
+                        onPress={() => setSecureTextEntry(!secureTextEntry)}
+                        color={COLORS.warmGray}
+                      />
+                    }
+                    error={!!errors.password}
+                    theme={{ colors: { primary: COLORS.sereneBlue } }}
+                    dense
                   />
-                }
-                error={!!errors.confirmPassword}
-                theme={{ colors: { primary: COLORS.sereneBlue } }}
-              />
-              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+                  {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-              <Button
-                mode="contained"
-                onPress={handleSignup}
-                style={styles.button}
-                loading={loading}
-                disabled={loading}
-                gradient={true}
-              >
-                Continue
-              </Button>
+                  <TextInput
+                    label="Confirm Password"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    mode="outlined"
+                    style={styles.input}
+                    secureTextEntry={confirmSecureTextEntry}
+                    right={
+                      <TextInput.Icon
+                        icon={confirmSecureTextEntry ? 'eye-off' : 'eye'}
+                        onPress={() => setConfirmSecureTextEntry(!confirmSecureTextEntry)}
+                        color={COLORS.warmGray}
+                      />
+                    }
+                    error={!!errors.confirmPassword}
+                    theme={{ colors: { primary: COLORS.sereneBlue } }}
+                    dense
+                  />
+                  {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+
+                  <Button
+                    mode="contained"
+                    onPress={handleSignup}
+                    style={styles.button}
+                    loading={authLoading}
+                    disabled={authLoading}
+                    gradient={true}
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.verificationText}>
+                    Please enter the verification code sent to your email
+                  </Text>
+                  
+                  <TextInput
+                    label="Verification Code"
+                    value={verificationCode}
+                    onChangeText={setVerificationCode}
+                    mode="outlined"
+                    style={styles.input}
+                    keyboardType="number-pad"
+                    error={!!errors.verification}
+                    theme={{ colors: { primary: COLORS.sereneBlue } }}
+                    dense
+                  />
+                  {errors.verification && <Text style={styles.errorText}>{errors.verification}</Text>}
+
+                  <Button
+                    mode="contained"
+                    onPress={handleVerifyEmail}
+                    style={styles.button}
+                    loading={loading}
+                    disabled={loading}
+                    gradient={true}
+                  >
+                    Verify Email
+                  </Button>
+                  
+                  <Button
+                    mode="outlined"
+                    onPress={() => setShowVerification(false)}
+                    style={[styles.button, styles.backButton]}
+                    disabled={loading}
+                  >
+                    Back to Sign Up
+                  </Button>
+                </>
+              )}
 
               <View style={styles.loginContainer}>
                 <Text style={styles.loginText}>Already have an account?</Text>
@@ -224,53 +410,85 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flexGrow: 1,
-    padding: SPACING.xl,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
-  headerContainer: {
+  logoContainer: {
     alignItems: 'center',
-    marginVertical: SPACING.xl,
+    marginBottom: SPACING.md,
   },
-  title: {
-    fontSize: TYPOGRAPHY.fontSizes.xxl,
+  appTitle: {
+    fontSize: TYPOGRAPHY.fontSizes.xl,
     fontWeight: TYPOGRAPHY.fontWeights.bold,
     color: COLORS.warmGray,
-    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
-  subtitle: {
-    fontSize: TYPOGRAPHY.fontSizes.md,
+  tagline: {
+    fontSize: TYPOGRAPHY.fontSizes.sm,
     color: COLORS.mutedLilac,
-    marginTop: SPACING.xs,
+    textAlign: 'center',
   },
   formContainer: {
     width: '100%',
     backgroundColor: COLORS.softWhite,
     borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     ...SHADOWS.medium,
   },
   errorContainer: {
     backgroundColor: 'rgba(255, 0, 0, 0.1)',
     padding: SPACING.sm,
     borderRadius: BORDER_RADIUS.sm,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  nameInput: {
+    flex: 1,
+    height: 50,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 0,
+  },
+  nameError: {
+    width: '48%',
+    fontSize: TYPOGRAPHY.fontSizes.xxs,
   },
   input: {
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
     backgroundColor: COLORS.softWhite,
+    height: 50,
   },
   button: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
+    height: 45,
+  },
+  backButton: {
+    marginTop: SPACING.sm,
+    backgroundColor: 'transparent',
+    borderColor: COLORS.sereneBlue,
   },
   errorText: {
     color: COLORS.error,
-    fontSize: TYPOGRAPHY.fontSizes.xs,
-    marginBottom: SPACING.sm,
+    fontSize: TYPOGRAPHY.fontSizes.xxs,
+    marginBottom: SPACING.xs,
     marginLeft: SPACING.xs,
+  },
+  verificationText: {
+    fontSize: TYPOGRAPHY.fontSizes.sm,
+    color: COLORS.warmGray,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
   },
   loginText: {
     color: COLORS.warmGray,

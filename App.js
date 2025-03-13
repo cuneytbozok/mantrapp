@@ -9,20 +9,26 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { store } from './src/redux/store';
 import { theme } from './src/constants/theme';
 import { checkAuthStatus } from './src/redux/slices/authSlice';
+import ClerkProvider from './src/providers/ClerkProvider';
+import AuthServiceInitializer from './src/providers/AuthServiceInitializer';
 
 // Main app component that wraps everything with providers
 export default function App() {
   return (
-    <ReduxProvider store={store}>
-      <PaperProvider theme={theme}>
-        <SafeAreaProvider>
-          <NavigationContainer>
-            <AppContent />
-            <StatusBar style="auto" />
-          </NavigationContainer>
-        </SafeAreaProvider>
-      </PaperProvider>
-    </ReduxProvider>
+    <ClerkProvider>
+      <ReduxProvider store={store}>
+        <PaperProvider theme={theme}>
+          <SafeAreaProvider>
+            <NavigationContainer>
+              <AuthServiceInitializer>
+                <AppContent />
+              </AuthServiceInitializer>
+              <StatusBar style="auto" />
+            </NavigationContainer>
+          </SafeAreaProvider>
+        </PaperProvider>
+      </ReduxProvider>
+    </ClerkProvider>
   );
 }
 
