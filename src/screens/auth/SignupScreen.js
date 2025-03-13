@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSignUp, useUser } from '@clerk/clerk-expo';
+import { useSignUp, useUser, useAuth } from '@clerk/clerk-expo';
 
 import { registerUser, clearError } from '../../redux/slices/authSlice';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, gradients } from '../../constants/theme';
@@ -32,6 +32,7 @@ const SignupScreen = ({ navigation }) => {
   const { loading: authLoading, error } = useSelector((state) => state.auth);
   const { isLoaded: isSignUpLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { signOut } = useAuth();
 
   // Clear any auth errors when component mounts or unmounts
   useEffect(() => {
@@ -118,25 +119,24 @@ const SignupScreen = ({ navigation }) => {
       console.log('Verification result:', result.status);
 
       if (result.status === 'complete') {
-        // Set the active session
-        await setActiveSignUp({ session: result.createdSessionId });
-        
-        // Update user profile with first and last name
-        await updateUserProfile(result.createdUserId);
-        
-        // Now update Redux state
-        const userData = {
-          id: result.createdUserId,
-          email,
-          name,
-          surname,
-        };
-        
-        dispatch(registerUser(userData));
-        
-        // Show success message and navigate to login
-        alert('Account created successfully! You can now log in.');
-        navigation.navigate('Login');
+        try {
+          // Instead of setting the active session here, just show success and navigate to login
+          // This avoids the single session mode error
+          
+          // Update user profile with first and last name if possible
+          if (result.createdUserId) {
+            await updateUserProfile(result.createdUserId);
+          }
+          
+          // Show success message and navigate to login
+          alert('Account created successfully! You can now log in.');
+          navigation.navigate('Login');
+        } catch (err) {
+          console.error('Error after verification:', err);
+          // Even if there's an error, we still want to navigate to login
+          alert('Account created, but there was an issue setting up your profile. You can still log in.');
+          navigation.navigate('Login');
+        }
       } else {
         setErrors({ verification: `Verification failed. Status: ${result.status}` });
       }
@@ -160,6 +160,17 @@ const SignupScreen = ({ navigation }) => {
       setLoading(true);
       
       try {
+        // Always try to sign out first to ensure we're in a clean state
+        try {
+          await signOut();
+          console.log('Signed out successfully before attempting signup');
+          // Add a small delay to ensure the sign out is complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (signOutErr) {
+          console.error('Error signing out:', signOutErr);
+          // Continue anyway
+        }
+        
         // Use Clerk's signUp hook directly with only the required parameters
         const result = await signUp.create({
           emailAddress: email,
@@ -169,21 +180,28 @@ const SignupScreen = ({ navigation }) => {
         console.log('Clerk signup result:', result.status);
         
         if (result.status === 'complete') {
-          // Set the active session
-          await setActiveSignUp({ session: result.createdSessionId });
-          
-          // Update user profile with first and last name
-          await updateUserProfile(result.createdUserId);
-          
-          // Now update Redux state
-          const userData = {
-            id: result.createdUserId,
-            email,
-            name,
-            surname,
-          };
-          
-          dispatch(registerUser(userData));
+          try {
+            // Set the active session using the destructured setActiveSignUp function
+            await setActiveSignUp({ session: result.createdSessionId });
+            
+            // Update user profile with first and last name
+            await updateUserProfile(result.createdUserId);
+            
+            // Now update Redux state
+            const userData = {
+              id: result.createdUserId,
+              email,
+              name,
+              surname,
+            };
+            
+            dispatch(registerUser(userData));
+          } catch (err) {
+            console.error('Error after signup completion:', err);
+            // If we can't set the active session, just navigate to login
+            alert('Account created, but there was an issue setting up your session. Please log in.');
+            navigation.navigate('Login');
+          }
         } else if (result.status === 'missing_requirements') {
           // Handle the case where email verification is required
           if (result.verifications?.emailAddress?.status === 'unverified') {

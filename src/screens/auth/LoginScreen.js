@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSignIn } from '@clerk/clerk-expo';
+import { useSignIn, useAuth } from '@clerk/clerk-expo';
 
 import { loginUser, clearError } from '../../redux/slices/authSlice';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, gradients } from '../../constants/theme';
@@ -19,11 +19,13 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [errors, setErrors] = useState({});
+  const [localLoading, setLocalLoading] = useState(false);
   
   const dispatch = useDispatch();
   const theme = useTheme();
   const { loading, error } = useSelector((state) => state.auth);
-  const { isLoaded: isSignInLoaded, signIn } = useSignIn();
+  const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn();
+  const { signOut } = useAuth();
 
   // Clear any auth errors when component mounts or unmounts
   useEffect(() => {
@@ -71,8 +73,20 @@ const LoginScreen = ({ navigation }) => {
     if (validateForm()) {
       // Clear any previous errors
       setErrors({});
+      setLocalLoading(true);
       
       try {
+        // Always try to sign out first to ensure we're in a clean state
+        try {
+          await signOut();
+          console.log('Signed out successfully before attempting login');
+          // Add a small delay to ensure the sign out is complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (signOutErr) {
+          console.error('Error signing out:', signOutErr);
+          // Continue anyway
+        }
+        
         // Use Clerk's signIn hook directly
         const result = await signIn.create({
           identifier: email,
@@ -82,25 +96,32 @@ const LoginScreen = ({ navigation }) => {
         console.log('Clerk signin result:', result.status);
         
         if (result.status === 'complete') {
-          // Set the active session
-          await signIn.setActive({ session: result.createdSessionId });
-          
-          // Now update Redux state
-          dispatch(loginUser({ email, password }))
-            .unwrap()
-            .then(user => {
-              console.log('Login successful:', user.id);
-            })
-            .catch(error => {
-              console.error('Login failed:', error);
-              setErrors({ auth: error || 'Login failed. Please try again.' });
-            });
+          try {
+            // Set the active session using the destructured setActive function
+            await setActive({ session: result.createdSessionId });
+            
+            // Now update Redux state
+            dispatch(loginUser({ email, password }))
+              .unwrap()
+              .then(user => {
+                console.log('Login successful:', user.id);
+              })
+              .catch(error => {
+                console.error('Login failed:', error);
+                setErrors({ auth: error || 'Login failed. Please try again.' });
+              });
+          } catch (err) {
+            console.error('Error setting active session:', err);
+            setErrors({ auth: 'Login successful, but there was an issue setting up your session. Please try again.' });
+          }
         } else {
           setErrors({ auth: 'Sign in is not complete. Please try again.' });
         }
       } catch (err) {
         console.error('Login error:', err);
         setErrors({ auth: err.message || 'Login failed. Please try again.' });
+      } finally {
+        setLocalLoading(false);
       }
     }
   };
@@ -173,8 +194,8 @@ const LoginScreen = ({ navigation }) => {
                 mode="contained"
                 onPress={handleLogin}
                 style={styles.button}
-                loading={loading}
-                disabled={loading}
+                loading={localLoading || loading}
+                disabled={localLoading || loading}
                 gradient={true}
               >
                 Login

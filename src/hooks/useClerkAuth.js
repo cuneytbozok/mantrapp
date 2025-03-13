@@ -9,6 +9,21 @@ export const useClerkAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Helper function to ensure we're signed out before attempting a new sign in/up
+  const ensureSignedOut = async () => {
+    try {
+      // Always try to sign out regardless of current state
+      console.log('Signing out of any existing session before proceeding');
+      await signOut();
+      
+      // Add a small delay to ensure the sign out is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (err) {
+      console.error('Error signing out:', err);
+      // Continue anyway, as we want to attempt the new sign in/up
+    }
+  };
+
   // Sign in with email and password
   const login = async (email, password) => {
     if (!isSignInLoaded) return;
@@ -17,6 +32,9 @@ export const useClerkAuth = () => {
     setError(null);
     
     try {
+      // Ensure we're signed out first
+      await ensureSignedOut();
+      
       // Start the sign-in process
       const result = await signIn.create({
         identifier: email,
@@ -25,7 +43,7 @@ export const useClerkAuth = () => {
       
       // Check if sign-in was successful
       if (result.status === 'complete') {
-        // Set the active session
+        // Set the active session using the destructured setActive function
         await setActive({ session: result.createdSessionId });
         
         // Get the user data after setting the active session
@@ -59,6 +77,9 @@ export const useClerkAuth = () => {
     setError(null);
     
     try {
+      // Ensure we're signed out first
+      await ensureSignedOut();
+      
       console.log('Clerk signup with params:', {
         emailAddress: email,
         password: '********'
@@ -74,7 +95,7 @@ export const useClerkAuth = () => {
       
       // Check sign-up status
       if (result.status === 'complete') {
-        // Set the active session
+        // Set the active session using the destructured setActiveSignUp function
         await setActiveSignUp({ session: result.createdSessionId });
         
         // Try to update the user profile with first and last name
