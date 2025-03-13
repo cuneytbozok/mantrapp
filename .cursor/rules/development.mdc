@@ -1,0 +1,40 @@
+---
+description: How to develop the app
+globs: 
+---
+# 📌 AI Code Writing Guidelines for Mantra App
+
+## 🔹 React Native Guidelines
+✅ Use **React Native with Expo** for cross-platform development.
+✅ Implement **React Navigation (Bottom Tabs & Stack)** for seamless navigation.
+✅ Use **Redux Toolkit** for state management instead of basic React useState.
+✅ UI components should be based on **React Native Paper** and should respect the given color palette.
+✅ Use **FlatList for list rendering** with optimized pagination.
+✅ Apply **Lottie animations** for better user experience in transitions.
+
+## 🔹 Node.js (Backend) Guidelines
+✅ Use **Express.js** for API development with a modular structure.
+✅ Implement **JWT authentication** with **bcrypt password hashing**.
+✅ Follow **RESTful API design**, separating concerns into controllers, services, and models.
+✅ Use **environment variables (.env) to store API keys and database URIs**.
+✅ Ensure **MongoDB queries are optimized** to prevent performance issues.
+
+## 🔹 Database & Security Rules
+✅ Implement **rate limiting** to prevent abuse of public endpoints.
+✅ Use **Mongoose schemas** to define and enforce data structures.
+
+## 🔹 AI & Mantra Generation Guidelines
+✅ Use **OpenAI's GPT API** to generate personalized mantras.
+✅ Ensure **AI-generated content is safe, positive, and motivational**.
+✅ Implement **DALL-E API** for image generation related to mantra categories.
+✅ Use **caching (Redis or memory-based)** to optimize API responses.
+
+## 🔹 Logging & Error Handling
+✅ Use **Winston or Morgan** for logging backend requests and errors.
+✅ Implement **error-handling middleware** in Express.js to manage API failures gracefully.
+✅ Use **Firebase Crashlytics** to track frontend crashes and performance issues.
+
+## 🔹 Deployment & CI/CD
+✅ Use **Expo EAS (Expo Application Services)** for automated builds.
+✅ Implement **GitHub Actions** for CI/CD pipeline checks (linting, testing, deployment).
+✅ Ensure **automated security vulnerability checks** for dependencies.

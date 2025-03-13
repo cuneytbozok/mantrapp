@@ -1,0 +1,165 @@
+---
+description: App infrastructure for framworks and tools
+globs: 
+---
+# Mantra App - Infrastructure Documentation
+
+## 1. Overview
+Mantra App is a personalized motivational app that delivers AI-generated mantras, allows users to favorite and journal them, and provides scheduled notifications. The infrastructure ensures that users can access mantras online and offline while maintaining an efficient backend system for AI content generation.
+
+## 2. System Components
+The system consists of multiple interconnected services that handle authentication, data storage, AI content generation, push notifications, offline support, and administrative controls.
+
+### 2.1 Mobile App (React Native)
+- Provides a user interface for interacting with mantras, favorites, journaling, and settings.
+- Fetches AI-generated mantras from the backend and stores them locally for offline access.
+- Displays notifications via Firebase Cloud Messaging.
+- Uses Clerk for authentication and authorization.
+- Synchronizes user preferences and data with the backend.
+
+### 2.2 Backend Server (Node.js + Express)
+- Handles API requests from the mobile app.
+- Manages AI-generated mantra requests using OpenAI's GPT API.
+- Schedules batch AI mantra generation jobs to optimize API usage.
+- Stores and retrieves user data, mantras, and journal entries from MongoDB.
+- Manages notification scheduling through Firebase Cloud Messaging.
+- Provides an admin panel interface for AI content moderation.
+
+### 2.3 Database (MongoDB)
+- Stores user information, excluding authentication data, which is managed by Clerk.
+- Maintains AI-generated mantras categorized by topics.
+- Stores user-generated data such as favorited mantras and journal entries.
+- Tracks AI request logs to monitor usage and optimize costs.
+- Maintains notification preferences for push scheduling.
+
+### 2.4 Clerk (Authentication & Authorization)
+- Manages user authentication without storing passwords in MongoDB.
+- Provides JWT tokens for secure API access.
+- Synchronizes user account details with the mobile app and backend.
+- Restricts access to admin panel functionalities based on roles.
+
+### 2.5 Firebase Cloud Messaging (FCM)
+- Handles push notifications for scheduled mantra reminders.
+- Integrates with the backend to schedule and send notifications.
+- Supports local notifications for offline users.
+
+### 2.6 Local Storage (AsyncStorage / SQLite)
+- Stores pre-generated AI mantras for offline access.
+- Caches user preferences and settings.
+- Syncs offline data with MongoDB when connectivity is restored.
+
+### 2.7 AI Processing (OpenAI GPT + DALL-E)
+- Generates personalized mantras based on user preferences.
+- Stores AI-generated mantras in MongoDB for future use.
+- Provides optional visual content for mantras using DALL-E.
+- Uses batch processing to reduce API costs and improve response times.
+
+### 2.8 Admin Panel (Web Interface)
+- Provides access to AI-generated mantra moderation.
+- Monitors OpenAI API usage and costs.
+- Allows admins to manually trigger AI batch generation.
+- Supports user management and system monitoring.
+
+## 3. Usage Scenarios
+
+### 3.1 User Registration & Login
+- The user registers or logs in through Clerk.
+- Clerk verifies authentication and returns a JWT token.
+- The mobile app retrieves user preferences and stored mantras from MongoDB.
+- If offline, the app loads previously cached data.
+
+### 3.2 Fetching AI-Generated Mantras
+- When online, the app requests a new mantra from the backend.
+- The backend queries MongoDB for stored AI-generated mantras.
+- If no matching mantra exists, the backend calls OpenAI GPT to generate one.
+- The new mantra is stored in MongoDB and returned to the app.
+- The app displays the mantra and optionally stores it for offline access.
+
+### 3.3 Offline Mode
+- The app downloads a batch of AI-generated mantras when connected.
+- These mantras are stored in AsyncStorage or SQLite.
+- If offline, the app selects a cached mantra instead of making an API call.
+- Journal entries and favorites are stored locally and synced once online.
+
+### 3.4 Favoriting a Mantra
+- The user marks a mantra as a favorite.
+- If online, the app updates the backend immediately.
+- If offline, the favorite is stored locally and synced later.
+
+### 3.5 Journaling a Reflection
+- The user writes a daily journal entry.
+- If online, the entry is saved directly in MongoDB.
+- If offline, the entry is stored locally and uploaded once connectivity is restored.
+
+### 3.6 Push Notifications
+- The user sets a preferred time for mantra delivery.
+- The backend schedules a Firebase Cloud Message for that time.
+- At the scheduled time, Firebase sends a push notification to the mobile app.
+- The user taps the notification to open the app and view the mantra.
+
+### 3.7 AI Mantra Generation Jobs
+- The backend runs a scheduled batch AI job daily.
+- The job generates new AI-powered mantras for different user categories.
+- The generated mantras are stored in MongoDB.
+- The next time a user requests a mantra, the system retrieves a pre-generated one instead of making a real-time AI request.
+
+### 3.8 Admin Moderation of AI Content
+- The admin logs into the web panel.
+- AI-generated mantras are displayed for review.
+- Inappropriate or low-quality mantras are removed.
+- The admin can trigger manual AI content generation for specific categories.
+- The system logs all AI requests for tracking and cost optimization.
+
+## 4. Data Flow Overview
+
+### 4.1 User Login & Preferences
+1. User logs in via Clerk.
+2. Mobile app requests user preferences from MongoDB.
+3. If online, preferences are updated in MongoDB and synced to the app.
+4. If offline, the app uses cached preferences.
+
+### 4.2 Mantra Retrieval
+1. User requests a mantra.
+2. App checks local storage for a cached mantra.
+3. If none exist, the app requests a mantra from the backend.
+4. Backend checks MongoDB for stored AI-generated mantras.
+5. If needed, backend calls OpenAI GPT for a new mantra.
+6. The mantra is returned and optionally stored locally.
+
+### 4.3 Push Notification Flow
+1. User sets notification preferences in the app.
+2. The backend updates Firebase Cloud Messaging with the schedule.
+3. At the specified time, Firebase sends a push notification to the mobile app.
+4. User taps the notification, which opens the app and displays the mantra.
+
+### 4.4 AI Batch Processing
+1. Backend runs a daily cron job.
+2. Job queries MongoDB for active user preferences.
+3. OpenAI GPT generates new mantras for different categories.
+4. New mantras are stored in MongoDB.
+5. Users retrieve pre-generated mantras instead of requesting them in real time.
+
+### 4.5 Offline Syncing
+1. The app detects offline status and stores data locally.
+2. When the user reconnects, the app syncs pending favorites and journal entries to MongoDB.
+3. The app downloads new AI-generated mantras for offline access.
+
+## 5. Infrastructure Diagram
+[User] → [Clerk (Auth)] → [Mobile App] → [MongoDB]
+↘ [Backend Server (Node.js)]
+↘ [OpenAI GPT (AI Mantras)]
+↘ [Firebase (Push Notifications)]
+↘ [Admin Panel (Web)]
+
+## 6. Scalability Considerations
+- AI batch processing reduces real-time API costs.
+- MongoDB is optimized with indexes for fast mantra retrieval.
+- Offline storage minimizes server requests.
+- Firebase ensures timely mantra delivery via push notifications.
+- The admin panel provides moderation for AI-generated content.
+
+## 7. Conclusion
+Mantra App's infrastructure balances AI-driven mantra personalization, offline functionality, and scalable backend services. By integrating batch AI processing, local storage, and push notifications, the system delivers a seamless experience while optimizing performance and costs.
+
+
+

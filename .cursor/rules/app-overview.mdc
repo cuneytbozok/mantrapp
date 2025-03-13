@@ -1,0 +1,187 @@
+---
+description: Understanding the project overview
+globs: 
+---
+# AI Rule Set for Mantra App
+
+## 1. Project Overview
+**Project Name:** Mantra App  
+**Purpose:** Provide users with personalized motivational mantras to promote a more positive daily life.  
+**Color Palette:**  
+- Almond (#C2BAAE)  
+- Sage (#8F907E)  
+- Earth (#654C37)  
+- Mist (#DADFDB)  
+- Pine (#383B26)  
+- Tan (#B89278)  
+
+## 2. Application Structure
+### **Main Pages and Features**
+#### a. Login/Sign-up Page
+- User registration form (Full Name, Date of Birth)
+- Selection of motivation areas (Career, Parenting, Healthy Living, Self-confidence, Romantic Relationships, etc.)
+- Login screen for existing users
+
+#### b. Bottom Navigation Tabs
+1. **Home**
+   - Personalized greeting message (e.g., "Good morning, Alex!")
+   - Display of the latest received mantra (if any)
+   - List of upcoming mantra notification times
+   - List of mantras received in the past week
+   - Quick favorite add/remove options
+
+2. **Favorite Mantras**
+   - List of user-favorited mantras
+   - Sorted by the date of favoriting (most recent first)
+   - Category filter
+   - Option to remove from favorites
+   - Share buttons (Copy/Save as Image)
+   - Infinite scrolling to access older favorites
+
+3. **Random (Center Button)**
+   - Generates a random mantra
+   - Displays the remaining daily limit (e.g., 3/3)
+   - Option to add to favorites
+   - Share buttons
+   - Option to manually select a category
+
+4. **Journal**
+   - Journal entry input field
+   - Date selector (default: today)
+   - List of past 7-day entries
+   - Date filtering option
+   - Emoji addition feature
+
+5. **Profile**
+   - User information
+   - Mantra preferences (categories and timing settings)
+   - Notification settings
+   - Application settings
+   - Statistics
+   - Logout button
+
+## 3. Key Considerations
+- **Notification Consistency:** All tabs should allow long-pressing mantra notifications to add them to favorites.
+- **Favorite System:** Since the last five favorited mantras will influence future mantra generation, the favorites tab must be easily accessible.
+- **Visual Support:** Category-based images should be used throughout the app, and text should be overlaid on mantra images when shared.
+- **Sharing Options:** "Copy" and "Save as Image" buttons should be present in the favorite and random mantra sections.
+- **User Experience:** The bottom navigation bar should match the app’s color scheme (Almond, Sage, Earth, Mist, Pine, Tan).
+- **Random Button Highlighting:** The center random button should have a distinct design (e.g., larger, circular) to differentiate it.
+- **Limit Indicators:** The random mantra generation limit (3 per day) should be visually displayed.
+
+## 4. Mantra Personalization & AI Rule Set
+### **1️⃣ Ensuring Meaningful and Unique Mantras**
+- **Avoid Repetition:**
+  - The last 30 days' mantras should be checked before generating a new one.
+  - If a similar mantra is detected, LLM should create a fresh variation.
+- **Contextual Variations:**
+  - Include time-based elements like day of the week or seasonal references.
+  - Example: "New week, fresh beginnings!" (Monday) or "Midweek focus!" (Wednesday).
+- **User’s Journey Acknowledgment:**
+  - AI should periodically remind the user of progress in their selected category.
+  - Example: "You've been focusing on self-confidence. Have you noticed the change?"
+
+### **2️⃣ Mantra Format Diversification**
+- AI-generated mantras should have a mix of:
+  - **Direct affirmations:** "I am confident and ready."
+  - **Reflective questions:** "How will I embrace positivity today?"
+  - **Metaphors:** "I am like a river, always flowing towards growth."
+  - **Action-oriented prompts:** "Today, I take one step towards my goal."
+  - **Quote-style inspiration:** "Small steps lead to big changes."
+
+### **3️⃣ Dynamic Contextual Adaptation**
+- AI should adjust mantras based on minor contextual cues like:
+  - Time of year (seasonal moods)
+  - National holidays (e.g., "Embracing gratitude this Thanksgiving")
+  - General motivational cycles (e.g., "Final stretch of the month—stay strong!")
+
+### **4️⃣ User-Configurable Preferences**
+- Users can modify:
+  - **Mantra category** (Self-confidence, Productivity, Calmness, etc.)
+  - **Notification time**
+  - **Preferred mantra style** (direct, reflective, etc.)
+  - **Sub-focus within the category** (e.g., Confidence: self-love vs. courage)
+
+### **5️⃣ Favorited Mantras & Retention**
+- Users can:
+  - Favorite received mantras
+  - Revisit their favorites anytime
+  - Influence future AI suggestions based on their favorite trends
+
+## 5. Development Phases
+### **Phase 1: Core Infrastructure**
+- Database design
+- User authentication system
+- Home page design
+- Bottom navigation setup
+- Basic mantra generation algorithm
+
+### **Phase 2: Core Features**
+- Mantra notification system
+- Favorite addition and listing
+- Random mantra generation
+- Journal entry feature
+- Profile and settings page
+
+### **Phase 3: Advanced Features**
+- AI-powered personalized mantra generation
+- DALL-E integration for image generation
+- Mantra visualization and sharing options
+- Notification system optimization
+
+### **Phase 4: Testing and Optimization**
+- User testing
+- Performance optimization
+- Bug fixes
+- User experience improvements
+
+## 6. Technical Requirements
+### **Frontend**
+- React Native (for iOS and Android)
+- Clean and motivational UI design
+- Uses the specified color palette
+
+### **Backend**
+- Node.js API
+- MongoDB database
+- Push notification service
+- User authentication system
+
+### **AI & Visual**
+- OpenAI GPT integration (for mantra generation)
+- DALL-E integration (for category images)
+- Mantra visualization module
+
+## 7. Core User Flows
+### **Registration and First Use**
+1. User downloads and opens the app.
+2. Completes the registration form and selects motivation areas.
+3. Sets preferred mantra delivery times and categories.
+4. Is directed to the home page.
+
+### **Daily Usage**
+1. User receives a mantra notification.
+2. Opens it or long-presses to favorite.
+3. Views mantra details.
+4. Optionally shares (as text or image).
+5. Adds journal notes.
+6. Taps the random mantra button (up to 3 times daily).
+
+## 8. Mandatory Rules
+### **Layered Architecture**
+- Keep data access, business logic, and presentation layers separate.
+- This ensures easy future expansion (e.g., adding an admin panel).
+
+### **Permissions & Authorization**
+- Implement authentication using Clerk.
+
+### **Database Structure**
+- Design the database to accommodate potential future management needs.
+
+### **Content Generation**
+- AI integrations (mantra generation, image generation) should be service-based.
+- These services must be accessible by both the mobile app and any future admin panel.
+
+---
+This rule set ensures **consistency, scalability, and security** for the Mantra App while keeping future expansion in mind.
+

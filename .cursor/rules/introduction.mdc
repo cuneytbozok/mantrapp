@@ -1,0 +1,111 @@
+---
+description: Introduction for the app and its goals.
+globs: 
+---
+# 🌿 Mantra App - Introduction & Project Goals
+
+## 📌 Overview
+**Mantra App** is a **personalized motivational app** designed to inspire and uplift users through **daily mantras**. By leveraging **AI-generated content**, user preferences, and a smooth mobile experience, the app aims to **help users build a positive mindset** through **customized affirmations, journaling, and notifications**.
+
+---
+
+## 🎯 Project Goals
+### ✅ **1. Provide Personalized & Meaningful Mantras**
+- Offer users **daily motivational quotes** that are **relevant to their selected categories**.
+- Use **AI (OpenAI GPT)** to generate unique, inspiring mantras tailored to each user.
+- Store and allow users to **favorite or share their favorite mantras**.
+- Ensure **mantras do not repeat within a 30-day period** to maintain uniqueness.
+- Introduce **mantra variations** (affirmations, questions, metaphors, action prompts, quotes).
+
+### ✅ **2. Create a Seamless & Intuitive User Experience**
+- Ensure a **calm and minimalistic design** that aligns with positive psychology.
+- Provide a **distraction-free interface** with a **focus on personal growth**.
+- Implement **soft animations and smooth navigation** to enhance usability.
+- Ensure **color themes and UI elements align with the branding palette**.
+
+### ✅ **3. Enable Users to Reflect & Track Progress**
+- Allow users to **write daily journal entries** and **track their emotional journey**.
+- Provide **emoji-based mood tracking** for self-reflection.
+- Show insights on **past mantras & reflections** to encourage personal growth.
+- Enable users to **favorite past mantras and influence future AI-generated ones**.
+
+### ✅ **4. Smart Notifications & Scheduling**
+- Implement **personalized notifications** for mantra reminders.
+- Allow users to **schedule mantra deliveries** at preferred times.
+- Ensure **only one mantra is sent per day** at the chosen time.
+- Enable **interactive notifications** (long-press to favorite).
+
+### ✅ **5. AI & Customization Enhancements**
+- Use **AI to generate fresh, engaging, and meaningful mantras**.
+- Offer **DALL-E integration** to create **custom images for shared mantras**.
+- Allow **category-based mantra customization** (e.g., Career, Self-Love, Confidence, etc.).
+- Ensure **AI-generated mantras adapt dynamically to seasons, holidays, and user focus areas**.
+
+---
+
+## 💡 Core Features
+### **1️⃣ Home Screen**
+- **Personalized greeting** ("Good Morning, [User]!")
+- **Last received mantra** with quick actions (favorite, share).
+- **Upcoming notification preview**.
+- **Past 7 days' mantra history**.
+
+### **2️⃣ Favorites & Collections**
+- View **all favorited mantras**.
+- Sort & filter **by date and category**.
+- **Easily copy or save as an image** for social sharing.
+- **Influence AI-generated mantras based on recent favorites**.
+
+### **3️⃣ Random Mantra Generator**
+- Generate a **new motivational mantra instantly**.
+- Show **daily mantra limit counter** (e.g., "2/3 left").
+- Allow **category selection** before generating.
+- Ensure **randomly generated mantras differ from the daily scheduled mantra**.
+
+### **4️⃣ Journaling & Reflection**
+- **Write personal journal entries** each day.
+- Track **mood with emoji reactions**.
+- **Filter past entries** by date.
+- **Associate journal entries with received mantras**.
+
+### **5️⃣ Profile & Settings**
+- Set **mantra delivery time preferences**.
+- Customize **categories of interest**.
+- Toggle **dark mode & accessibility settings**.
+- Adjust **mantra tone preferences** (direct, reflective, inspirational, metaphorical).
+
+---
+
+## 🔧 Technical Approach
+- **Frontend:** **React Native** (Cross-platform for iOS & Android)
+- **Backend:** **Node.js (Express) + MongoDB**
+- **Authentication:** **Clerk can be used**
+- **State Management:** **Redux Toolkit**
+- **Notifications:** **Firebase Cloud Messaging (FCM)**
+- **AI Integrations:** **OpenAI GPT for mantra generation, DALL-E for images**
+- **Storage:** **AsyncStorage / SQLite for local data, MongoDB for server-side storage**
+
+---
+
+## 🚀 What We Aim to Achieve
+1️⃣ **A highly engaging and calming app experience** that encourages users to stay positive.  
+2️⃣ **An intelligent AI-powered system** that generates **meaningful & personalized** mantras.  
+3️⃣ **A smooth and optimized UI** that enhances accessibility and usability.  
+4️⃣ **A scalable platform** that can grow with additional features over time.  
+
+---
+
+## 📅 Development Roadmap
+- **Phase 1:** **Core infrastructure, authentication, and UI layout.**
+- **Phase 2:** **Feature development (mantras, favorites, journaling, notifications).**
+- **Phase 3:** **AI-powered personalization & visual enhancements.**
+- **Phase 4:** **Optimization, testing, and improvements.**
+
+---
+
+## 🎯 Conclusion
+The **Mantra App** is more than just a motivational tool—it’s a **personalized companion** that helps users **build a habit of positivity**. Through **carefully crafted UI, AI-generated content, and seamless user interactions**, we aim to **deliver an uplifting and empowering experience** for all users.
+
+---
+🚀 **"Empower your mind, one mantra at a time!"** 🌿
+

@@ -1,0 +1,111 @@
+---
+description: App design rules
+globs: 
+---
+# Mantra App - AI Design Rules
+
+## General Design Principles
+- **Minimal & Clean UI**: Follow a simple, modern, and distraction-free design.
+- **Calming & Motivational Aesthetic**: The interface should feel peaceful and inspiring.
+- **Consistent Color Palette**: Use the official color scheme for all UI elements.
+- **Accessible UI**: Ensure high contrast ratios and scalable fonts for readability.
+- **Smooth Transitions & Animations**: Apply subtle animations (Lottie or Reanimated) for a premium experience.
+
+## Color Palette (Branding & Visual Mood)
+### Updated Soft & Gradient-Based Color Theme
+
+| Color        | Hex Code  |
+|-------------|----------|
+| Soft Lavender | `#E6DFF5` |
+| Muted Lilac   | `#D3C4E3` |
+| Pale Rose     | `#F6E7EB` |
+| Serene Blue   | `#B4C6E7` |
+| Warm Gray     | `#DADADA` |
+| Soft White    | `#F9F9F9` |
+
+- **Primary UI Color:** Soft Lavender (`#E6DFF5`)
+- **Button & Highlight:** Serene Blue (`#B4C6E7`)
+- **Background & Cards:** Soft White (`#F9F9F9`)
+- **Text & Titles:** Warm Gray (`#DADADA`)
+- **Accent Colors for Mantra Categories:** Muted Lilac (`#D3C4E3`) & Pale Rose (`#F6E7EB`)
+
+### Gradients & Visual Effects
+- Backgrounds should feature soft, radial gradients for a dreamy and weightless feel.
+- Light glowing effects on important elements to emphasize a tranquil experience.
+
+## UI Component Design Guidelines
+### Home Screen
+- Personalized Greeting ("Good Morning, [Name]!")
+- Latest Mantra Displayed at the Top
+- Upcoming Notification Time Preview
+- Quick Access Buttons (Favorite, Share, Generate New)
+- Soft Rounded Corners & Card-Based Layout
+- FlatList for Recent Mantras (Scrollable)
+- Radial Gradient Background with Subtle Lighting Effects
+
+### Favorite Mantras Screen
+- Card-Based List of Favorite Mantras
+- Sort by Latest Added (Descending Order)
+- Filter by Category
+- Swipe-to-Delete Option
+- Copy & Save as Image for Sharing
+- Pastel-colored category tags for easy organization
+
+### Random Mantra Screen
+- Centered Large Button for New Mantra
+- Daily Limit Indicator (e.g., "2/3 Left")
+- Animated Reveal Effect for New Mantra
+- Auto-Suggest Mantra Based on Favorites
+- Category Selector for More Control
+- Favoriting & Sharing Options
+- Soft glowing animation for new mantras
+
+### Journaling & Reflection
+- Write personal journal entries each day.
+- Track mood with emoji reactions.
+- Filter past entries by date or emojis or text search. 
+- Associate journal entries with received mantras.
+- Minimalist typography & soft background contrast.
+
+### Profile & Settings
+- User Information & Preferences
+- Notification Time Selection
+- Category Preference (Selectable from dropdown)
+- Focus selection based on the category (Selectable from dropdown)
+- Dark Mode Toggle
+- Logout & Account Management
+- Mantra Tone Selection (Direct, Reflective, Metaphorical, Inspirational)
+
+## UI/UX Interactions & Animations
+- Smooth Transitions with Framer Motion or Reanimated
+- Lottie Animations for Loading States
+- Soft Press Effects for Buttons
+- Subtle Haptic Feedback on Key Actions
+- Custom Animation for Random Mantra Generation
+- Floating UI Elements for Depth (Glassy Effect on Cards)
+- Slow & Relaxing Scroll Effects to Enhance Zen-Like Experience
+
+## Typography & Fonts
+- **Primary Font:** San Francisco (iOS) / Roboto (Android)
+- **Mantra Text:** Large (24px, Bold, Centered)
+- **Buttons:** Medium (16px, Semi-Bold)
+- **Body Text:** Regular (14px, Light, High Readability)
+- **Headers:** Softly Rounded & Subtly Bold
+
+## AI Design Constraints
+- Do not overcomplicate UI - Keep it simple, intuitive, and clutter-free.
+- No harsh colors - Stick to the soothing color palette.
+- No overuse of heavy animations - Ensure smooth performance.
+- No excessive text fields - Keep forms short and minimal.
+
+## Final AI Instructions
+- AI should always generate UI components that are modular.
+- AI should respect the design guidelines strictly.
+- AI should generate UI that is lightweight, performant, and visually appealing.
+- AI should always optimize for accessibility (A11Y).
+- AI should ensure consistency in spacing, margins, and alignments.
+- AI should create an immersive and relaxing user experience with gradient and subtle glow effects.
+
+## Note
+These rules ensure a seamless and delightful user experience in the Mantra App, aligning with the soft and meditative aesthetic.
+
