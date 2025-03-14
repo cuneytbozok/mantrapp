@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useUser } from '@clerk/clerk-expo';
 
 import { fetchMantrasSuccess, addToFavorites, removeFromFavorites } from '../../redux/slices/mantraSlice';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, gradients } from '../../constants/theme';
@@ -20,6 +21,29 @@ const HomeScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
   const [dailyMantra, setDailyMantra] = useState(null);
+  const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
+
+  // Debug user data
+  useEffect(() => {
+    console.log('HomeScreen - User data from Redux:', JSON.stringify(user));
+    if (isUserLoaded) {
+      console.log('HomeScreen - Clerk user data:', JSON.stringify({
+        firstName: clerkUser?.firstName,
+        lastName: clerkUser?.lastName,
+        isLoaded: isUserLoaded
+      }));
+    } else {
+      console.log('HomeScreen - Clerk user not loaded yet');
+    }
+  }, [user, clerkUser, isUserLoaded]);
+
+  // Check if user profile needs to be updated
+  useEffect(() => {
+    if (isUserLoaded && clerkUser && user && (!user.name || !user.surname)) {
+      // Just log that the user profile is incomplete
+      console.log('User profile is incomplete. Name or surname is missing.');
+    }
+  }, [isUserLoaded, clerkUser, user]);
 
   useEffect(() => {
     if (mantras && mantras.length > 0 && !dailyMantra) {
@@ -103,7 +127,7 @@ const HomeScreen = ({ navigation }) => {
           ListHeaderComponent={() => (
             <View style={styles.headerContainer}>
               <Text style={styles.welcomeText}>
-                Welcome back, {user?.name || 'Friend'}
+                Welcome back, {isUserLoaded && clerkUser?.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : (user?.name ? `${user.name} ${user.surname || ''}`.trim() : 'Friend')}
               </Text>
               
               {dailyMantra ? (

@@ -303,16 +303,6 @@ const ProfileScreen = ({ navigation }) => {
             />
             <Card.Content>
               <List.Item
-                title="Edit Profile"
-                titleStyle={styles.listItemTitle}
-                left={props => <List.Icon {...props} icon="account-edit" color={COLORS.sereneBlue} />}
-                right={props => <List.Icon {...props} icon="chevron-right" color={COLORS.sereneBlue} />}
-                style={styles.accountItem}
-              />
-              
-              <Divider style={styles.divider} />
-              
-              <List.Item
                 title={<Text style={styles.listItemTitle}>Change Password</Text>}
                 left={props => <List.Icon {...props} icon="lock" color={COLORS.sereneBlue} />}
                 right={props => <List.Icon {...props} icon="chevron-right" color={COLORS.sereneBlue} />}

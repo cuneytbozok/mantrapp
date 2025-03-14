@@ -89,21 +89,6 @@ const SignupScreen = ({ navigation }) => {
     return isValid;
   };
 
-  // Update user profile with first and last name
-  const updateUserProfile = async (userId) => {
-    try {
-      if (isUserLoaded && user) {
-        await user.update({
-          firstName: name,
-          lastName: surname,
-        });
-        console.log('User profile updated with name and surname');
-      }
-    } catch (err) {
-      console.error('Error updating user profile:', err);
-    }
-  };
-
   const handleVerifyEmail = async () => {
     if (!verificationCode) {
       setErrors({ verification: 'Please enter the verification code' });
@@ -122,11 +107,6 @@ const SignupScreen = ({ navigation }) => {
         try {
           // Instead of setting the active session here, just show success and navigate to login
           // This avoids the single session mode error
-          
-          // Update user profile with first and last name if possible
-          if (result.createdUserId) {
-            await updateUserProfile(result.createdUserId);
-          }
           
           // Show success message and navigate to login
           alert('Account created successfully! You can now log in.');
@@ -171,10 +151,12 @@ const SignupScreen = ({ navigation }) => {
           // Continue anyway
         }
         
-        // Use Clerk's signUp hook directly with only the required parameters
+        // Use Clerk's signUp hook directly with firstName and lastName
         const result = await signUp.create({
           emailAddress: email,
           password,
+          firstName: name,
+          lastName: surname
         });
         
         console.log('Clerk signup result:', result.status);
@@ -183,9 +165,6 @@ const SignupScreen = ({ navigation }) => {
           try {
             // Set the active session using the destructured setActiveSignUp function
             await setActiveSignUp({ session: result.createdSessionId });
-            
-            // Update user profile with first and last name
-            await updateUserProfile(result.createdUserId);
             
             // Now update Redux state
             const userData = {

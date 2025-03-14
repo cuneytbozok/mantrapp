@@ -43,9 +43,19 @@ export const logoutUser = createAsyncThunk(
 
 export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
-  async () => {
-    const userData = await authService.checkAuth();
-    return userData;
+  async (_, { rejectWithValue }) => {
+    try {
+      // Get user data from auth service
+      const userData = await authService.checkAuth();
+      
+      // Log the user data for debugging
+      console.log('checkAuthStatus thunk - User data from authService:', JSON.stringify(userData));
+      
+      return userData;
+    } catch (error) {
+      console.error('Error in checkAuthStatus thunk:', error);
+      return rejectWithValue(error.message);
+    }
   }
 );
 
@@ -94,6 +104,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        console.log('Redux: Login fulfilled with payload:', JSON.stringify(action.payload));
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
@@ -107,6 +118,10 @@ const authSlice = createSlice({
         if (action.payload.focus) {
           state.selectedFocus = action.payload.focus;
         }
+        console.log('Redux: Updated auth state after login:', JSON.stringify({
+          isAuthenticated: state.isAuthenticated,
+          user: state.user
+        }));
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -119,6 +134,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
+        console.log('Redux: Register fulfilled with payload:', JSON.stringify(action.payload));
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
@@ -132,6 +148,10 @@ const authSlice = createSlice({
         if (action.payload.focus) {
           state.selectedFocus = action.payload.focus;
         }
+        console.log('Redux: Updated auth state after register:', JSON.stringify({
+          isAuthenticated: state.isAuthenticated,
+          user: state.user
+        }));
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -152,6 +172,7 @@ const authSlice = createSlice({
         state.loading = true;
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
+        console.log('Redux: checkAuthStatus fulfilled with payload:', JSON.stringify(action.payload));
         state.loading = false;
         if (action.payload) {
           state.isAuthenticated = true;
@@ -165,6 +186,10 @@ const authSlice = createSlice({
           if (action.payload.focus) {
             state.selectedFocus = action.payload.focus;
           }
+          console.log('Redux: Updated auth state after checkAuthStatus:', JSON.stringify({
+            isAuthenticated: state.isAuthenticated,
+            user: state.user
+          }));
         }
       })
       .addCase(checkAuthStatus.rejected, (state) => {

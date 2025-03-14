@@ -100,30 +100,62 @@ class AuthService {
    */
   async checkAuth() {
     if (!this.clerkAuth) {
+      console.log('checkAuth: Auth service not initialized');
       throw new Error('Auth service not initialized');
     }
     
     try {
+      // Check if Clerk is loaded
+      if (!this.clerkAuth.isLoaded) {
+        console.log('checkAuth: Clerk auth not loaded yet');
+        return null;
+      }
+      
       // Check if user is authenticated with Clerk
       if (!this.clerkAuth.isAuthenticated) {
+        console.log('checkAuth: User is not authenticated');
         return null;
       }
       
       // Get current user from Clerk
       const userData = this.clerkAuth.getCurrentUser();
       
+      console.log('checkAuth: Retrieved user data from Clerk:', JSON.stringify(userData));
+      
       if (!userData) {
+        console.log('checkAuth: No user data returned from getCurrentUser');
         return null;
       }
+      
+      // Log specific fields to debug
+      console.log('checkAuth: User name and surname:', JSON.stringify({
+        name: userData.name,
+        surname: userData.surname
+      }));
       
       // Get any stored preferences
       const storedPreferences = await this.getUserPreferences();
       
+      // Ensure we have the name and surname from Clerk
+      if (!userData.name && this.clerkAuth.user?.firstName) {
+        console.log('checkAuth: Updating name from Clerk user data');
+        userData.name = this.clerkAuth.user.firstName;
+      }
+      
+      if (!userData.surname && this.clerkAuth.user?.lastName) {
+        console.log('checkAuth: Updating surname from Clerk user data');
+        userData.surname = this.clerkAuth.user.lastName;
+      }
+      
       // Return combined user data with preferences
-      return {
+      const result = {
         ...userData,
         ...storedPreferences,
       };
+      
+      console.log('checkAuth: Returning combined user data:', JSON.stringify(result));
+      
+      return result;
     } catch (error) {
       console.error('Error checking auth status:', error);
       return null;

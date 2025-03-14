@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { Provider as ReduxProvider, useDispatch } from 'react-redux';
+import { Provider as ReduxProvider } from 'react-redux';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import { store } from './src/redux/store';
 import { theme } from './src/constants/theme';
-import { checkAuthStatus } from './src/redux/slices/authSlice';
 import ClerkProvider from './src/providers/ClerkProvider';
 import AuthServiceInitializer from './src/providers/AuthServiceInitializer';
 
@@ -34,12 +33,6 @@ export default function App() {
 
 // Inner component that can use hooks
 function AppContent() {
-  const dispatch = useDispatch();
-
-  // Check if user is already logged in when app starts
-  useEffect(() => {
-    dispatch(checkAuthStatus());
-  }, [dispatch]);
-
+  // No need to check auth status here anymore, it's handled in AuthServiceInitializer
   return <AppNavigator />;
 }

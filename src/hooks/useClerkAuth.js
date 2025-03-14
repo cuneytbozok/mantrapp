@@ -46,15 +46,29 @@ export const useClerkAuth = () => {
         // Set the active session using the destructured setActive function
         await setActive({ session: result.createdSessionId });
         
+        // Wait for user to be loaded
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Get the user data after setting the active session
-        const currentUser = await user;
+        if (!isUserLoaded || !user) {
+          console.log('User not loaded after login, waiting...');
+          // Wait a bit longer and try again
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        console.log('Login - Raw Clerk user data:', JSON.stringify({
+          id: user?.id,
+          email: user?.primaryEmailAddress?.emailAddress,
+          firstName: user?.firstName,
+          lastName: user?.lastName
+        }));
         
         // Return user data
         return {
-          id: currentUser?.id,
-          email: currentUser?.primaryEmailAddress?.emailAddress,
-          name: currentUser?.firstName || '',
-          surname: currentUser?.lastName || '',
+          id: user?.id,
+          email: user?.primaryEmailAddress?.emailAddress,
+          name: user?.firstName || '',
+          surname: user?.lastName || '',
         };
       } else {
         throw new Error('Sign in failed');
@@ -82,13 +96,17 @@ export const useClerkAuth = () => {
       
       console.log('Clerk signup with params:', {
         emailAddress: email,
-        password: '********'
+        password: '********',
+        firstName: name,
+        lastName: surname
       });
       
-      // Start the sign-up process with only required parameters
+      // Start the sign-up process with firstName and lastName
       const result = await signUp.create({
         emailAddress: email,
         password,
+        firstName: name,
+        lastName: surname
       });
       
       console.log('Signup status:', result.status);
@@ -98,19 +116,7 @@ export const useClerkAuth = () => {
         // Set the active session using the destructured setActiveSignUp function
         await setActiveSignUp({ session: result.createdSessionId });
         
-        // Try to update the user profile with first and last name
-        try {
-          if (user) {
-            await user.update({
-              firstName: name,
-              lastName: surname,
-            });
-            console.log('User profile updated with name and surname');
-          }
-        } catch (profileErr) {
-          console.error('Error updating user profile:', profileErr);
-          // Continue with registration even if profile update fails
-        }
+        // No need to update user profile separately since we included firstName and lastName in the signup
         
         // Return user data
         return {
@@ -170,6 +176,14 @@ export const useClerkAuth = () => {
   // Get current user
   const getCurrentUser = () => {
     if (!isUserLoaded || !user) return null;
+    
+    console.log('getCurrentUser - Raw Clerk user data:', JSON.stringify({
+      id: user.id,
+      email: user.primaryEmailAddress?.emailAddress,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: user.fullName
+    }));
     
     return {
       id: user.id,
